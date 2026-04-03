@@ -10,20 +10,30 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// --- CONFIGURAÇÃO DO BANCO DE DADOS NA NUVEM (TiDB) ---
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'projeto_energetico'
+    host: 'gateway01.us-east-1.prod.aws.tidbcloud.com',
+    user: '3DmiyYl9FhBC24p.root',
+    password: 'Rc55SyqMk1UwM9o4',
+    database: 'test',
+    port: 4000,
+    ssl: {
+        minVersion: 'TLSv1.2',
+        rejectUnauthorized: true
+    }
 });
 
 db.connect((err) => {
-    if (err) return console.error('❌ Erro MySQL: ' + err.stack);
-    console.log('✅ MySQL Conectado!');
+    if (err) {
+        console.error('❌ Erro ao conectar no TiDB (Nuvem): ' + err.stack);
+        return;
+    }
+    console.log('✅ Conectado ao MySQL do TiDB Cloud com Sucesso!');
 });
 
 let usuariosOnline = {};
 
+// --- ROTAS DO BANCO DE DADOS ---
 app.get('/consumo/:marca', (req, res) => {
     const marca = req.params.marca;
     db.query('SELECT quantidade FROM consumo WHERE marca = ?', [marca], (err, results) => {
@@ -48,6 +58,7 @@ app.post('/zerar', (req, res) => {
     });
 });
 
+// --- LÓGICA DO SOCKET.IO (CHAT E RANKING EM TEMPO REAL) ---
 io.on('connection', (socket) => {
     socket.on('usuario_entrou', (nome) => {
         socket.username = nome;
@@ -83,6 +94,8 @@ io.on('connection', (socket) => {
     });
 });
 
-http.listen(3000, () => {
-    console.log("🚀 Servidor rodando em http://localhost:3000");
+// --- INICIALIZAÇÃO DO SERVIDOR ---
+const PORT = process.env.PORT || 3000;
+http.listen(PORT, () => {
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
 });
