@@ -7,18 +7,28 @@ const textoAlerta = document.getElementById('texto-alerta');
 const fotoDinamica = document.getElementById('foto-dinamica');
 
 let marcaAtual = "";
-const somLatinha = new Audio('som/latinha-abrindo.mp3'); // Certifique-se de que o caminho está correto
+const somLatinha = new Audio('som/latinha-abrindo.mp3');
 
-// --- SISTEMA DE STATUS E EFEITOS ---
+// --- SISTEMA DE STATUS E EFEITOS (CORRIGIDO) ---
 function atualizarStatus(qtd) {
     let msg = "";
-    if (qtd === 0) msg = "Bora começar?";
+
+    // A lógica foi invertida: o CPF CANCELADO vem primeiro para travar no final
+    if (qtd >= 11) {
+        msg = "⚠️ CPF CANCELADO ⚠️";
+    } 
+    else if (qtd === 0) msg = "aperte no energético?";
     else if (qtd === 1) msg = "Beba com moderação!";
     else if (qtd === 2) msg = "Cuidado, vai com calma...";
     else if (qtd === 3) msg = "Perdeu o juízo?";
     else if (qtd === 4) msg = "VOCÊ VAI MORRER!";
-    else if (qtd >= 11) msg = "⚠️ CPF CANCELADO ⚠️";
-    else msg = "O perigo aumenta...";
+    else if (qtd === 5) msg = "pare agora!";
+    else if (qtd === 6) msg = "virou saudades!";
+    else if (qtd === 7) msg = "acabou para voce!";
+    else if (qtd >= 8 && qtd <= 10) msg = "O perigo aumenta..."; // Ajustado para não conflitar
+    else {
+        msg = "O perigo aumenta..."; 
+    }
 
     textoAlerta.innerText = msg;
     document.body.classList.remove('tremendo', 'perigo');
@@ -100,22 +110,18 @@ document.querySelectorAll('.btn-escolha-marca').forEach(btn => {
     });
 });
 
-// --- CONTROLE DE CONSUMO (UNIFICADO) ---
+// --- CONTROLE DE CONSUMO ---
 document.getElementById('btn-add-lata').addEventListener('click', async () => {
-    // 1. Feedback Visual (Efeito de clique)
     fotoDinamica.style.transition = "transform 0.1s";
     fotoDinamica.style.transform = "scale(0.9)";
     setTimeout(() => { fotoDinamica.style.transform = "scale(1)"; }, 100);
 
-    // 2. Feedback Sonoro
     somLatinha.play().catch(() => console.log("Áudio aguardando interação do usuário."));
 
-    // 3. Lógica de Interface
     let valor = parseInt(numContador.innerText) + 1;
     numContador.innerText = valor;
     atualizarStatus(valor);
 
-    // 4. Sincronização em Tempo Real e Banco de Dados
     socket.emit('bebeu_energetico', marcaAtual);
     
     try {
@@ -175,9 +181,11 @@ socket.on('receber_mensagem', (d) => {
     lista.scrollTop = lista.scrollHeight;
 });
 
+// --- RANKING (COM LIMPEZA DE LISTA) ---
 socket.on('atualizar_ranking', (lista) => {
     const divRanking = document.getElementById('lista-ranking');
-    divRanking.innerHTML = ""; 
+    divRanking.innerHTML = ""; // ISSO AQUI EVITA QUE OS NOMES REPITAM!
+    
     lista.forEach(user => {
         const p = document.createElement('p');
         p.innerHTML = `👤 <strong></strong>: ${user.pontos} latas`;
