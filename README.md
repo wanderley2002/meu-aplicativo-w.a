@@ -10,12 +10,6 @@ Sistema de chat em tempo real com ranking de performance dos usuários.
 
 ---
 
-## 📸 Preview
-
-(coloca print aqui depois)
-
----
-
 ## 🛠 Tecnologias
 
 - Node.js
