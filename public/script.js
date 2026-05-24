@@ -9,7 +9,7 @@ const fotoDinamica = document.getElementById('foto-dinamica');
 let marcaAtual = "";
 const somLatinha = new Audio('som/latinha-abrindo.mp3');
 
-// --- SISTEMA DE STATUS E EFEITOS ---
+// --- SISTEMA DE STATUS E EFEITOS (CORRIGIDO) ---
 function atualizarStatus(qtd) {
     let msg = "";
 
@@ -135,27 +135,26 @@ document.getElementById('btn-add-lata').addEventListener('click', async () => {
     }
 });
 
-// --- BOTÃO ZERAR TUDO (CORRIGIDO PARA RESETAR A SUA TELA NA HORA) ---
+// --- BOTÃO ZERAR TUDO (REVISADO E CORRIGIDO) ---
 document.getElementById('btn-resetar').addEventListener('click', async () => {
     if(confirm("Deseja realmente ZERAR o consumo desta marca?")) {
         try {
-            // 1. Envia a ordem de zerar para o banco de dados
+            // Envia a ordem para limpar o MySQL
             await fetch(`${window.location.origin}/zerar`, { 
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
                 body: JSON.stringify({marca: marcaAtual}) 
             });
 
-            // 2. Modifica os elementos visuais na sua tela na mesma hora
-            numContador.innerText = 0; 
-            atualizarStatus(0);       
+            // 🔥 CORREÇÃO DA SUA TELA: Zera o número e o texto do status imediatamente!
+            numContador.innerText = 0;
+            atualizarStatus(0);
 
-            // 3. Atualiza os placares pequenos do topo
+            // Recarrega o mini-placar de cima com os novos valores
             await atualizarPlacarTopo();
 
-            // 4. Avisa o Socket caso queira atualizar outras conexões
+            // Dispara para sincronizar com outras abas abertas
             socket.emit('forcar_atualizacao_geral');
-            
         } catch(e) {
             console.error("Erro ao zerar dados:", e);
         }
@@ -192,7 +191,7 @@ socket.on('receber_mensagem', (d) => {
     lista.scrollTop = lista.scrollHeight;
 });
 
-// --- RANKING ---
+// --- RANKING (COM LIMPEZA DE LISTA) ---
 socket.on('atualizar_ranking', (lista) => {
     const divRanking = document.getElementById('lista-ranking');
     divRanking.innerHTML = ""; 
