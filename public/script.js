@@ -1,3 +1,5 @@
+
+
 const socket = io();
 const c1 = document.getElementById('camada-1-inicio');
 const c2 = document.getElementById('camada-2-selecao');
@@ -13,7 +15,6 @@ const somLatinha = new Audio('som/latinha-abrindo.mp3');
 function atualizarStatus(qtd) {
     let msg = "";
 
-    // A lógica foi invertida: o CPF CANCELADO vem primeiro para travar no final
     if (qtd >= 11) {
         msg = "⚠️ CPF CANCELADO ⚠️";
     } 
@@ -25,7 +26,7 @@ function atualizarStatus(qtd) {
     else if (qtd === 5) msg = "pare agora!";
     else if (qtd === 6) msg = "virou saudades!";
     else if (qtd === 7) msg = "acabou para voce!";
-    else if (qtd >= 8 && qtd <= 10) msg = "O perigo aumenta..."; // Ajustado para não conflitar
+    else if (qtd >= 8 && qtd <= 10) msg = "O perigo aumenta..."; 
     else {
         msg = "O perigo aumenta..."; 
     }
@@ -46,10 +47,11 @@ async function atualizarPlacarTopo() {
     const marcas = ['monster', 'redbull', 'tnt'];
     for (let marca of marcas) {
         try {
-            const res = await fetch(`/consumo/${marca}`);
+            // Adicionado local de origem correto dinamicamente para evitar erros de porta
+            const res = await fetch(`${window.location.origin}/consumo/${marca}`);
             const dados = await res.json();
             const elemento = document.getElementById(`total-${marca}`);
-            if (elemento) elemento.innerText = dados.total;
+            if (elemento) elemento.innerText = dados.total || 0;
         } catch (err) { 
             console.error("Erro ao buscar dados do MySQL:", err); 
         }
@@ -64,14 +66,16 @@ document.getElementById('btn-entrar').addEventListener('click', async () => {
         document.getElementById('user-nome').value = nomeDigitado;
         socket.emit('usuario_entrou', nomeDigitado);
         
+        // MUDANÇA CRUCIAL: Passamos para a próxima tela ANTES de fazer o fetch
+        // Se a nuvem do TiDB demorar ou falhar, o seu botão entrar NÃO vai travar!
+        c1.style.display = 'none';
+        c2.style.display = 'block';
+        
         try {
             await atualizarPlacarTopo(); 
         } catch (e) {
             console.log("Servidor offline ou erro no placar, prosseguindo...");
         }
-
-        c1.style.display = 'none';
-        c2.style.display = 'block';
     } else { 
         alert("Por favor, digite seu nome!"); 
     }
@@ -99,11 +103,11 @@ document.querySelectorAll('.btn-escolha-marca').forEach(btn => {
         c3.style.display = 'block';
 
         try {
-            const res = await fetch(`/consumo/${marcaAtual}`);
+            const res = await fetch(`${window.location.origin}/consumo/${marcaAtual}`);
             const dados = await res.json();
-            numContador.innerText = dados.total;
-            atualizarStatus(parseInt(dados.total));
-            atualizarPlacarTopo();
+            numContador.innerText = dados.total || 0;
+            atualizarStatus(parseInt(dados.total || 0));
+            await atualizarPlacarTopo();
         } catch(e) { 
             console.error("Erro ao carregar dados da marca:", e); 
         }
@@ -125,12 +129,12 @@ document.getElementById('btn-add-lata').addEventListener('click', async () => {
     socket.emit('bebeu_energetico', marcaAtual);
     
     try {
-        await fetch('/adicionar', { 
+        await fetch(`${window.location.origin}/adicionar`, { 
             method: 'POST', 
             headers: {'Content-Type': 'application/json'}, 
             body: JSON.stringify({marca: marcaAtual}) 
         });
-        atualizarPlacarTopo();
+        await atualizarPlacarTopo();
     } catch(err) {
         console.error("Erro ao salvar no banco:", err);
     }
@@ -139,7 +143,7 @@ document.getElementById('btn-add-lata').addEventListener('click', async () => {
 document.getElementById('btn-resetar').addEventListener('click', async () => {
     if(confirm("Deseja realmente ZERAR o consumo desta marca?")) {
         try {
-            await fetch('/zerar', { 
+            await fetch(`${window.location.origin}/zerar`, { 
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
                 body: JSON.stringify({marca: marcaAtual}) 
@@ -184,7 +188,7 @@ socket.on('receber_mensagem', (d) => {
 // --- RANKING (COM LIMPEZA DE LISTA) ---
 socket.on('atualizar_ranking', (lista) => {
     const divRanking = document.getElementById('lista-ranking');
-    divRanking.innerHTML = ""; // ISSO AQUI EVITA QUE OS NOMES REPITAM!
+    divRanking.innerHTML = ""; 
     
     lista.forEach(user => {
         const p = document.createElement('p');
