@@ -120,16 +120,13 @@ app.post('/zerar', (req, res) => {
 });
 
 // ==========================================
-// SOCKET.IO (SEM MUDANÇA)
+// SOCKET.IO (CORRIGIDO PARA ZERAR EM TEMPO REAL)
 // ==========================================
 io.on('connection', (socket) => {
+
     socket.on('usuario_entrou', (nome) => {
         socket.username = nome;
-
-        usuariosOnline[socket.id] = {
-            nome: nome,
-            pontos: 0
-        };
+        usuariosOnline[socket.id] = { nome: nome, pontos: 0 };
 
         io.emit('receber_mensagem', {
             nome: "SISTEMA",
@@ -143,12 +140,10 @@ io.on('connection', (socket) => {
     socket.on('bebeu_energetico', (marca) => {
         if (usuariosOnline[socket.id]) {
             usuariosOnline[socket.id].pontos += 1;
-
             io.emit('aviso_bebeu', {
                 nome: usuariosOnline[socket.id].nome,
                 marca: marca
             });
-
             io.emit('atualizar_ranking', Object.values(usuariosOnline));
         }
     });
@@ -157,6 +152,7 @@ io.on('connection', (socket) => {
         io.emit('receber_mensagem', dados);
     });
 
+    // 🔥 Adicionado de volta para fazer a sincronização das telas ao zerar tudo!
     socket.on('forcar_atualizacao_geral', () => {
         io.emit('atualizar_geral');
     });
@@ -164,10 +160,8 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         if (socket.username) {
             delete usuariosOnline[socket.id];
-
             io.emit('atualizar_ranking', Object.values(usuariosOnline));
             io.emit('atualizar_usuarios', Object.values(usuariosOnline));
-
             io.emit('receber_mensagem', {
                 nome: "SISTEMA",
                 msg: `👋 ${socket.username} saiu.`
