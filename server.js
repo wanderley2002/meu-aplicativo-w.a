@@ -120,7 +120,7 @@ app.post('/zerar', (req, res) => {
 });
 
 // ==========================================
-// SOCKET.IO (CORRIGIDO PARA ZERAR EM TEMPO REAL)
+// SOCKET.IO (SEM MUDANÇA)
 // ==========================================
 io.on('connection', (socket) => {
 
@@ -150,11 +150,6 @@ io.on('connection', (socket) => {
 
     socket.on('enviar_mensagem', (dados) => {
         io.emit('receber_mensagem', dados);
-    });
-
-    // 🔥 Adicionado de volta para fazer a sincronização das telas ao zerar tudo!
-    socket.on('forcar_atualizacao_geral', () => {
-        io.emit('atualizar_geral');
     });
 
     socket.on('disconnect', () => {
