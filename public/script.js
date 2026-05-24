@@ -1,5 +1,3 @@
-
-
 const socket = io();
 const c1 = document.getElementById('camada-1-inicio');
 const c2 = document.getElementById('camada-2-selecao');
@@ -11,7 +9,7 @@ const fotoDinamica = document.getElementById('foto-dinamica');
 let marcaAtual = "";
 const somLatinha = new Audio('som/latinha-abrindo.mp3');
 
-// --- SISTEMA DE STATUS E EFEITOS (CORRIGIDO) ---
+// --- SISTEMA DE STATUS E EFEITOS ---
 function atualizarStatus(qtd) {
     let msg = "";
 
@@ -47,7 +45,6 @@ async function atualizarPlacarTopo() {
     const marcas = ['monster', 'redbull', 'tnt'];
     for (let marca of marcas) {
         try {
-            // Adicionado local de origem correto dinamicamente para evitar erros de porta
             const res = await fetch(`${window.location.origin}/consumo/${marca}`);
             const dados = await res.json();
             const elemento = document.getElementById(`total-${marca}`);
@@ -66,8 +63,6 @@ document.getElementById('btn-entrar').addEventListener('click', async () => {
         document.getElementById('user-nome').value = nomeDigitado;
         socket.emit('usuario_entrou', nomeDigitado);
         
-        // MUDANÇA CRUCIAL: Passamos para a próxima tela ANTES de fazer o fetch
-        // Se a nuvem do TiDB demorar ou falhar, o seu botão entrar NÃO vai travar!
         c1.style.display = 'none';
         c2.style.display = 'block';
         
@@ -140,15 +135,27 @@ document.getElementById('btn-add-lata').addEventListener('click', async () => {
     }
 });
 
+// --- BOTÃO ZERAR TUDO (CORRIGIDO PARA RESETAR A SUA TELA NA HORA) ---
 document.getElementById('btn-resetar').addEventListener('click', async () => {
     if(confirm("Deseja realmente ZERAR o consumo desta marca?")) {
         try {
+            // 1. Envia a ordem de zerar para o banco de dados
             await fetch(`${window.location.origin}/zerar`, { 
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
                 body: JSON.stringify({marca: marcaAtual}) 
             });
+
+            // 2. Modifica os elementos visuais na sua tela na mesma hora
+            numContador.innerText = 0; 
+            atualizarStatus(0);       
+
+            // 3. Atualiza os placares pequenos do topo
+            await atualizarPlacarTopo();
+
+            // 4. Avisa o Socket caso queira atualizar outras conexões
             socket.emit('forcar_atualizacao_geral');
+            
         } catch(e) {
             console.error("Erro ao zerar dados:", e);
         }
@@ -185,7 +192,7 @@ socket.on('receber_mensagem', (d) => {
     lista.scrollTop = lista.scrollHeight;
 });
 
-// --- RANKING (COM LIMPEZA DE LISTA) ---
+// --- RANKING ---
 socket.on('atualizar_ranking', (lista) => {
     const divRanking = document.getElementById('lista-ranking');
     divRanking.innerHTML = ""; 
