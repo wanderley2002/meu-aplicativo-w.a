@@ -37,14 +37,12 @@ let usuariosOnline = {};
 // GET /consumo/:marca (CORRIGIDO)
 // ==========================================
 app.get('/consumo/:marca', (req, res) => {
-
     const marca = req.params.marca;
 
     db.query(
         'SELECT quantidade FROM consumo WHERE marca = ?',
         [marca],
         (err, results) => {
-
             if (err) {
                 console.log(err);
                 return res.status(500).json({
@@ -69,14 +67,12 @@ app.get('/consumo/:marca', (req, res) => {
 // POST /adicionar (CORRIGIDO)
 // ==========================================
 app.post('/adicionar', (req, res) => {
-
     const { marca } = req.body;
 
     db.query(
         'UPDATE consumo SET quantidade = quantidade + 1 WHERE marca = ?',
         [marca],
         (err, results) => {
-
             if (err) {
                 console.log(err);
                 return res.status(500).json({ erro: err.message });
@@ -99,14 +95,12 @@ app.post('/adicionar', (req, res) => {
 // POST /zerar (CORRIGIDO)
 // ==========================================
 app.post('/zerar', (req, res) => {
-
     const { marca } = req.body;
 
     db.query(
         'UPDATE consumo SET quantidade = 0 WHERE marca = ?',
         [marca],
         (err, results) => {
-
             if (err) {
                 console.log(err);
                 return res.status(500).json({ erro: err.message });
@@ -129,7 +123,6 @@ app.post('/zerar', (req, res) => {
 // SOCKET.IO (SEM MUDANÇA)
 // ==========================================
 io.on('connection', (socket) => {
-
     socket.on('usuario_entrou', (nome) => {
         socket.username = nome;
 
@@ -148,9 +141,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('bebeu_energetico', (marca) => {
-
         if (usuariosOnline[socket.id]) {
-
             usuariosOnline[socket.id].pontos += 1;
 
             io.emit('aviso_bebeu', {
@@ -166,10 +157,12 @@ io.on('connection', (socket) => {
         io.emit('receber_mensagem', dados);
     });
 
+    socket.on('forcar_atualizacao_geral', () => {
+        io.emit('atualizar_geral');
+    });
+
     socket.on('disconnect', () => {
-
         if (socket.username) {
-
             delete usuariosOnline[socket.id];
 
             io.emit('atualizar_ranking', Object.values(usuariosOnline));
