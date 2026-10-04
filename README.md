@@ -1,4 +1,4 @@
-# 💬 Meu Aplicativo W.A (Ranking & Performance)
+# 💬 Meu Aplicativo W.A ENERGETICO (Ranking & Performance)
 
 Sistema de chat em tempo real com ranking de performance dos usuários.
 
